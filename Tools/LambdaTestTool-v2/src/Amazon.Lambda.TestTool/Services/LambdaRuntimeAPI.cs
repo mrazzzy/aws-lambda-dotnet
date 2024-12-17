@@ -1,7 +1,6 @@
-﻿using Amazon.Lambda.TestTool.Models;
-using Amazon.Lambda.TestTool.Services;
+﻿using System.Text;
+using Amazon.Lambda.TestTool.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Text;
 
 // TODO:
 // Make IRuntimeApiDataStore separate the events per function name
@@ -9,16 +8,16 @@ using System.Text;
 //          https://docs.aws.amazon.com/lambda/latest/api/API_Invoke.html#lambda-Invoke-request-InvocationType
 
 
-namespace Amazon.Lambda.TestTool;
+namespace Amazon.Lambda.TestTool.Services;
 
-public class LambdaRuntimeAPI
+public class LambdaRuntimeApi
 {
-    private const string DEFAULT_FUNCTION_NAME = "__DefaultFunction__";
-    private const string HEADER_BREAK = "-----------------------------------";
+    private const string DefaultFunctionName = "__DefaultFunction__";
+    private const string HeaderBreak = "-----------------------------------";
 
     private readonly IRuntimeApiDataStore _runtimeApiDataStore;
 
-    public LambdaRuntimeAPI(WebApplication app, IRuntimeApiDataStore runtimeApiDataStore)
+    public LambdaRuntimeApi(WebApplication app, IRuntimeApiDataStore runtimeApiDataStore)
     {
         _runtimeApiDataStore = runtimeApiDataStore;
         app.MapPost("/2015-03-31/functions/function/invocations", (Delegate)PostEventDefaultFunction);
@@ -39,7 +38,7 @@ public class LambdaRuntimeAPI
 
     public Task<IResult> PostEventDefaultFunction(HttpContext ctx)
     {
-        return PostEvent(ctx, DEFAULT_FUNCTION_NAME);
+        return PostEvent(ctx, DefaultFunctionName);
     }
 
     public async Task<IResult> PostEvent(HttpContext ctx, string functionName)
@@ -53,7 +52,7 @@ public class LambdaRuntimeAPI
 
     public Task GetNextInvocationDefaultFunction(HttpContext ctx)
     {
-        return GetNextInvocation(ctx, DEFAULT_FUNCTION_NAME);
+        return GetNextInvocation(ctx, DefaultFunctionName);
     }
 
     public async Task GetNextInvocation(HttpContext ctx, string functionName)
@@ -67,7 +66,7 @@ public class LambdaRuntimeAPI
         if (activeEvent == null)
             return;
 
-        Console.WriteLine(HEADER_BREAK);
+        Console.WriteLine(HeaderBreak);
         Console.WriteLine($"Next invocation returned: {activeEvent.AwsRequestId}");
 
         ctx.Response.Headers["Lambda-Runtime-Aws-Request-Id"] = activeEvent.AwsRequestId;
@@ -88,21 +87,21 @@ public class LambdaRuntimeAPI
 
     public IResult PostInitErrorDefaultFunction([FromHeader(Name = "Lambda-Runtime-Function-Error-Type")] string errorType, [FromBody] string error)
     {
-        return PostInitError(DEFAULT_FUNCTION_NAME, errorType, error);
+        return PostInitError(DefaultFunctionName, errorType, error);
     }
 
     public IResult PostInitError(string functionName, [FromHeader(Name = "Lambda-Runtime-Function-Error-Type")] string errorType, [FromBody] string error)
     {
         Console.Error.WriteLine("Init Error Type: " + errorType);
         Console.Error.WriteLine(error);
-        Console.Error.WriteLine(HEADER_BREAK);
+        Console.Error.WriteLine(HeaderBreak);
         return Results.Accepted(null, new StatusResponse { Status = "success" });
     }
 
 
     public Task<IResult> PostInvocationResponseDefaultFunction(HttpContext ctx, string awsRequestId)
     {
-        return PostInvocationResponse(ctx, DEFAULT_FUNCTION_NAME, awsRequestId);
+        return PostInvocationResponse(ctx, DefaultFunctionName, awsRequestId);
     }
 
     public async Task<IResult> PostInvocationResponse(HttpContext ctx, string functionName, string awsRequestId)
@@ -112,7 +111,7 @@ public class LambdaRuntimeAPI
 
         _runtimeApiDataStore.ReportSuccess(awsRequestId, response);
 
-        Console.WriteLine(HEADER_BREAK);
+        Console.WriteLine(HeaderBreak);
         Console.WriteLine($"Response for request {awsRequestId}");
         Console.WriteLine(response);
 
@@ -121,7 +120,7 @@ public class LambdaRuntimeAPI
 
     public Task<IResult> PostErrorDefaultFunction(HttpContext ctx, string awsRequestId, [FromHeader(Name = "Lambda-Runtime-Function-Error-Type")] string errorType)
     {
-        return PostError(ctx, DEFAULT_FUNCTION_NAME, awsRequestId, errorType);
+        return PostError(ctx, DefaultFunctionName, awsRequestId, errorType);
     }
 
     public async Task<IResult> PostError(HttpContext ctx, string functionName, string awsRequestId, [FromHeader(Name = "Lambda-Runtime-Function-Error-Type")] string errorType)
@@ -130,7 +129,7 @@ public class LambdaRuntimeAPI
         var errorBody = await reader.ReadToEndAsync();
 
         _runtimeApiDataStore.ReportError(awsRequestId, errorType, errorBody);
-        await Console.Error.WriteLineAsync(HEADER_BREAK);
+        await Console.Error.WriteLineAsync(HeaderBreak);
         await Console.Error.WriteLineAsync($"Request {awsRequestId} Error Type: {errorType}");
         await Console.Error.WriteLineAsync(errorBody);
 

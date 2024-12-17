@@ -1,31 +1,19 @@
 using Amazon.Lambda.TestTool;
-using System.Diagnostics;
+using Amazon.Lambda.TestTool.Commands;
+using Amazon.Lambda.TestTool.Extensions;
+using Amazon.Lambda.TestTool.Services;
+using Spectre.Console.Cli;
 
-var lambdaOptions = CommandLineOptions.Parse(args);
+var serviceCollection = new ServiceCollection();
 
-if (lambdaOptions.ShowHelp)
+serviceCollection.AddCustomServices();
+
+var registrar = new TypeRegistrar(serviceCollection);
+
+var app = new CommandApp<RunCommand>(registrar);
+app.Configure(config =>
 {
-    CommandLineOptions.PrintUsage();
-    return;
-}
+    config.SetApplicationName(Constants.ToolName);
+});
 
-var process = LambdaTestToolProcess.Startup(lambdaOptions);
-
-if (!lambdaOptions.NoLaunchWindow)
-{
-    try
-    {
-        var info = new ProcessStartInfo
-        {
-            UseShellExecute = true,
-            FileName = process.ServiceUrl
-        };
-        Process.Start(info);
-    }
-    catch (Exception e)
-    {
-        Console.Error.WriteLine($"Error launching browser: {e.Message}");
-    }
-}
-
-await process.RunningTask;
+return await app.RunAsync(args);

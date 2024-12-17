@@ -1,25 +1,26 @@
-﻿using System.Net;
-using System.Reflection;
-using System.Text;
+﻿using System.Reflection;
 using System.Text.Json;
 
+namespace Amazon.Lambda.TestTool.Utilities;
 
-namespace Amazon.Lambda.TestTool;
-
+/// <summary>
+/// A utility class that encapsulates common functionlity.
+/// </summary>
 public static class Utils
 {
-    public const string DEFAULT_CONFIG_FILE = "aws-lambda-tools-defaults.json";
-
+    /// <summary>
+    /// Determines the version of the tool.
+    /// </summary>
     public static string DetermineToolVersion()
     {
-        const string UnknownVersion = "Unknown";
+        const string unknownVersion = "Unknown";
 
         AssemblyInformationalVersionAttribute? attribute = null;
         try
         {
             var assembly = Assembly.GetEntryAssembly();
             if (assembly == null)
-                return UnknownVersion;
+                return unknownVersion;
             attribute = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
         }
         catch (Exception)
@@ -35,21 +36,7 @@ public static class Utils
             version = version.Substring(0, version.IndexOf('+'));
         }
 
-        return version ?? UnknownVersion;
-    }
-
-
-
-    public static void PrintToolTitle(string productName)
-    {
-        var sb = new StringBuilder(productName);
-        var version = Utils.DetermineToolVersion();
-        if (!string.IsNullOrEmpty(version))
-        {
-            sb.Append($" ({version})");
-        }
-
-        Console.WriteLine(sb.ToString());
+        return version ?? unknownVersion;
     }
 
     /// <summary>
@@ -65,7 +52,7 @@ public static class Utils
                 return string.Empty;
 
             var doc = JsonDocument.Parse(data);
-            var prettyPrintJson = System.Text.Json.JsonSerializer.Serialize(doc, new JsonSerializerOptions()
+            var prettyPrintJson = JsonSerializer.Serialize(doc, new JsonSerializerOptions()
             {
                 WriteIndented = true
             });
@@ -75,14 +62,5 @@ public static class Utils
         {
             return data ?? string.Empty;
         }
-    }
-
-    public static string DetermineLaunchUrl(string host, int port, string defaultHost)
-    {
-        if (!IPAddress.TryParse(host, out _))
-            // Any host other than explicit IP will be redirected to default host (i.e. localhost)
-            return $"http://{defaultHost}:{port}";
-
-        return $"http://{host}:{port}";
     }
 }
