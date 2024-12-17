@@ -45,7 +45,7 @@ public class PackagingTests
         string currentDirectory = Directory.GetCurrentDirectory();
         while (currentDirectory != null)
         {
-            string[] solutionFiles = Directory.GetFiles(currentDirectory, "*.sln");
+            string[] solutionFiles = Directory.GetFiles(currentDirectory, "*.sln*");
             if (solutionFiles.Length > 0)
             {
                 return currentDirectory;
